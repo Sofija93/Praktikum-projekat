@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id       String @id
+  username String @unique
+}
+
+model Ucenik {
+  id         String      @id
+  username   String      @unique
+  ime        String
+  prezime    String
+  email      String?     @unique
+  telefon    String?     @unique
+  adresa     String
+  img        String?
+  pol        Pol
+  pocetak    DateTime    @default(now())
+  roditeljId String
+  razredId   Int
+  oceneId    Int
+  prisustvo  Prisustvo[]
+  rezultat   Rezultat[]
+  ocene      Ocene       @relation(fields: [oceneId], references: [id])
+  razred     Razred      @relation(fields: [razredId], references: [id])
+  roditelj   Roditelj    @relation(fields: [roditeljId], references: [id])
+  datumRodjenja DateTime
+}
+
+model Profesor {
+  id       String    @id
+  username String    @unique
+  ime      String
+  prezime  String
+  email    String?   @unique
+  telefon  String?   @unique
+  adresa   String
+  img      String?
+  pol      Pol
+  pocetak  DateTime  @default(now())
+  lekcije  Lekcija[]
+  razredi  Razred[]
+  predmeti Predmet[] @relation("PredmetToProfesor")
+  datumRodjenja DateTime
+}
+
+model Roditelj {
+  id       String   @id
+  username String   @unique
+  ime      String
+  prezime  String
+  email    String?  @unique
+  telefon  String?  @unique
+  adresa   String
+  pocetak  DateTime @default(now())
+  ucenici  Ucenik[]
+}
+
+model Ocene {
+  id      Int      @id @default(autoincrement())
+  nivo    Int      @unique
+
+  razredi Razred[]
+  ucenici Ucenik[]
+}
+
+model Razred {
+  id         Int        @id @default(autoincrement())
+  ime        String     @unique
+  brUcenika  Int
+
+  razredniId String?
+  oceneId    Int
+  dogadjaji  Dogadjaj[]
+  lekcije    Lekcija[]
+  novosti    Novosti[]
+  ocene      Ocene      @relation(fields: [oceneId], references: [id])
+  razredni   Profesor?  @relation(fields: [razredniId], references: [id])
+  ucenici    Ucenik[]
+}
+
+model Predmet {
+  id        Int        @id @default(autoincrement())
+  ime       String     @unique
+  lekcije   Lekcija[]
+  profesori Profesor[] @relation("PredmetToProfesor")
+}
+
+model Lekcija {
+  id         Int         @id @default(autoincrement())
+  ime        String
+  dan        Dan
+  pocetak    DateTime
+  kraj       DateTime
+
+  predmetId  Int
+  razredId   Int
+  profesorId String
+  ispiti     Ispit[]
+  predmet    Predmet     @relation(fields: [predmetId], references: [id])
+  profesor   Profesor    @relation(fields: [profesorId], references: [id])
+  razred     Razred      @relation(fields: [razredId], references: [id])
+  prisustvo  Prisustvo[]
+  zadatak    Zadatak[]
+}
+
+model Ispit {
+  id        Int        @id @default(autoincrement())
+  naziv     String
+  pocetak   DateTime
+  kraj      DateTime
+
+  lekcijaId Int
+  lekcija   Lekcija    @relation(fields: [lekcijaId], references: [id])
+  rezultat  Rezultat[]
+}
+
+model Zadatak {
+  id        Int        @id @default(autoincrement())
+  naziv     String
+  pocetak   DateTime
+  kraj      DateTime
+  
+  lekcijaId Int
+  rezultat  Rezultat[]
+  lekcija   Lekcija    @relation(fields: [lekcijaId], references: [id])
+}
+
+model Rezultat {
+  id        Int      @id @default(autoincrement())
+  rezultat  Int
+
+  ispitId   Int?
+  zadatakId Int?
+  ucenikId  String
+  ispit     Ispit?   @relation(fields: [ispitId], references: [id])
+  ucenik    Ucenik   @relation(fields: [ucenikId], references: [id])
+  zadatak   Zadatak? @relation(fields: [zadatakId], references: [id])
+}
+
+model Prisustvo {
+  id        Int      @id @default(autoincrement())
+  datum     DateTime
+  prisutan  Boolean
+
+  ucenikId  String
+  lekcijaId Int
+  lekcija   Lekcija  @relation(fields: [lekcijaId], references: [id])
+  ucenik    Ucenik   @relation(fields: [ucenikId], references: [id])
+}
+
+model Dogadjaj {
+  id       Int      @id @default(autoincrement())
+  naziv    String
+  opis     String
+  pocetak  DateTime
+  kraj     DateTime
+
+  razredId Int?
+  razred   Razred?  @relation(fields: [razredId], references: [id])
+}
+
+model Novosti {
+  id       Int      @id @default(autoincrement())
+  naziv    String
+  opis     String
+  datum    DateTime
+
+  razredId Int?
+  razred   Razred?   @relation(fields: [razredId], references: [id])
+}
+
+enum Pol {
+  MUSKO
+  ZENSKO
+}
+
+enum Dan {
+  PONEDELJAK
+  UTORAK
+  SREDA
+  CETVRTAK
+  PETAK
+}
